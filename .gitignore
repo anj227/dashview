@@ -8,9 +8,11 @@ __pypackages__/
 
 # Related to virtual env:
 pyvenv.cfg
-lib/*
-etc/*
 bin/*
+etc/*
+lib/*
+share/*
 
 # Personal notes:
 notes_*.txt
+data/*
