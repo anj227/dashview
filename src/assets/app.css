@@ -1,0 +1,54 @@
+body {
+    font-family: sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+    color: black
+}
+
+.app-header .app-header--title {
+    font-size: 22px;
+    padding-left: 5px;
+}
+
+/* Data Loading options -- just trying out:  https://dash.plotly.com/loading-states; */
+*[data-dash-is-loading="true"]{
+    visibility: hidden;
+}
+
+*[data-dash-is-loading="true"]::before{
+    content: "Loading...";
+    display: inline-block;
+    color: magenta;
+    visibility: visible;
+}
+
+.app-header {
+    height: 60px;
+    line-height: 60px;
+    border-bottom: thin lightgrey solid;
+}
+
+
+/* AK favorites */
+.REDBG { 
+    border: "1px solid red";
+}
+.SIDEBAR_STYLE {
+    position: "fixed";
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: "16rem";
+    padding: "2rem 1rem";
+    background-color: "#f8f9fa"
+}
+
+/* # padding for the page content */
+.CONTENT_STYLE {
+    position: "fixed";
+    position: "relative";
+    margin-left: "16rem";
+    margin-right: "2rem";
+    padding: "2rem 1rem";
+}
+
