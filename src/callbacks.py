@@ -30,7 +30,6 @@ LOADED_DFS = dict()
 
 
 def update_loaded_files_navContent(loaded_dfs_children, new_df_name):
-    print(loaded_dfs_children)
     ids = []
     for i in range(len(loaded_dfs_children)):
         df_id = loaded_dfs_children[i]['props']['children']
@@ -115,8 +114,8 @@ def update_data_analysis_results(button_clicks):
         Input(component_id='upload-data', component_property='contents'),
         State(component_id='upload-data', component_property='filename'),
         State(component_id='upload-data', component_property='last_modified'),
-        Input('loaded_df_info', 'data'),
-        Input('loaded_df_content', 'data')
+        State('loaded_df_info', 'data'),          # Changed from input --> state
+        State('loaded_df_content', 'data')
     )
 def upload_new_data(content, file_name, file_date, current_df_info, current_df_content):
     # First backup 
@@ -142,7 +141,7 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                         'last_updated': file_date
                     }
             
-    return current_df_info, current_df_content
+    return new_df_info, new_df_content
 
 # Callback for changing what is an active DF 
 @app.callback(
@@ -153,19 +152,13 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
 def update_active_df_name(current_df_info, button_clicks):
     # Assume you need to display last updated value.
     trig = dash.callback_context.triggered[0]
-    print(trig)
-    print('----- what triggered it ^^^-------')
-    print(button_clicks)
-    print('---- button clicks -----')
     latest_df_name = None 
     if '"type":"df_button"' in trig['prop_id']:
         # Data didn't change -- only the click on the DF name..
         latest_df_name = get_active_df_name_from_button(button_clicks)
     else:
-        if current_df_info is not None: 
-            print(current_df_info)
+        if current_df_info != {}: 
             latest_df_name = list(current_df_info.keys())[-1]
-    print('Latest df name: ', latest_df_name)
     return latest_df_name
     
 # Change the displayed values if active_df is changed:
@@ -177,6 +170,11 @@ def update_active_df_name(current_df_info, button_clicks):
     )
 def update_df_display(active_df_name, current_df_info, current_df_content):
     # Assume you need to display last updated value.
+    print('---- Current data: ')
+    print(active_df_name)
+    print(current_df_info)
+    print(current_df_content)
+    print('------------')
     df_content = html.Div()
     if active_df_name is not None: 
         df_dict = current_df_content[active_df_name]
@@ -192,18 +190,23 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
 # Update div_loaded_dfs as new DFs are loaded..
 @app.callback(
         Output(component_id='div_loaded_dfs', component_property='children'),
-        Input('active_df_name', 'data'),
-        State('div_loaded_dfs', 'children'),         
+        # Input('active_df_name', 'data'),
+        Input('loaded_df_info', 'data'),
+        # State('div_loaded_dfs', 'children'),         
     )
-def update_displayed_df_list(active_df_name, loaded_dfs_children):
+def update_displayed_df_list(current_df_info): # (active_df_name, loaded_dfs_children):
     # Assume you need to display last updated value.
-    df_content = html.Div()
-    load_files_content = loaded_dfs_children
+    df_content = []
+    # load_files_content = loaded_dfs_children
 
-    if active_df_name is not None: 
-        load_files_content = update_loaded_files_navContent(loaded_dfs_children, active_df_name)
+    # if active_df_name is not None: 
+    # load_files_content = update_loaded_files_navContent(loaded_dfs_children, active_df_name)
+    
+    for df_name in current_df_info:
+        new_comp = html.Button(df_name, id={'type': 'df_button', 'index': f'submit_{df_name}'} )
+        df_content.append(new_comp)
         
-    return load_files_content
+    return df_content
 # ##############
 # Callback for Uploading a file, or changing the Displayed data (Active DF)
 

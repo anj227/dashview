@@ -95,6 +95,7 @@ title = 'Data analysis made easy:'
 content = html.Div(id="content_div", 
     children=[
         html.H4(children=title),
+        html.Hr(),
         DATA_ANALYSIS_OPTIONS,
         DATA_RESULTS,
         html.Div(id="output-data-upload", children=[])
@@ -109,9 +110,9 @@ app.layout = html.Div([
     html.Div([sidebar, content]),
 
     # dcc.Store inside the app that stores the intermediate value
-    dcc.Store(id='loaded_df_info', storage_type='session'),
-    dcc.Store(id='loaded_df_content', storage_type='session'),
-    dcc.Store(id='active_df_name', storage_type='session'),
+    dcc.Store(id='loaded_df_info', storage_type='local'),
+    dcc.Store(id='loaded_df_content', storage_type='local'),   # , storage_type='session'
+    dcc.Store(id='active_df_name', storage_type='local'),
 ])
 
 
