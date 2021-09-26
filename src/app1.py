@@ -106,7 +106,12 @@ content = html.Div(id="content_div",
 # ***
 
 app.layout = html.Div([
-    html.Div([sidebar, content])
+    html.Div([sidebar, content]),
+
+    # dcc.Store inside the app that stores the intermediate value
+    dcc.Store(id='loaded_df_info', storage_type='session'),
+    dcc.Store(id='loaded_df_content', storage_type='session'),
+    dcc.Store(id='active_df_name', storage_type='session'),
 ])
 
 
