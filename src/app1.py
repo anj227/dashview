@@ -89,7 +89,7 @@ DATA_ANALYSIS_OPTIONS = html.Div(
                 ])
         ]
     )
-DATA_RESULTS = html.Div(id='div_data_results', children=[], className='styles.REDBG')
+DATA_RESULTS = html.Div(id='div_data_results', children=[], style=styles.RedBorder )
 
 title = 'Data analysis made easy:'
 content = html.Div(id="content_div", 
@@ -113,6 +113,7 @@ app.layout = html.Div([
     dcc.Store(id='loaded_df_info', storage_type='local'),
     dcc.Store(id='loaded_df_content', storage_type='local'),   # , storage_type='session'
     dcc.Store(id='active_df_name', storage_type='local'),
+    dcc.Store(id='active_df_content', storage_type='local'),
 ])
 
 

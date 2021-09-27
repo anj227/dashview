@@ -1,9 +1,10 @@
-# %% 
-# Style 
-# styling the sidebar
-REDBG = { 
+
+# Usually for the debugging purposes..
+RedBorder = { 
     "border": "1px solid red",
 }
+
+# styling the sidebar
 SIDEBAR_STYLE = {
     "position": "fixed",
     "top": 0,
