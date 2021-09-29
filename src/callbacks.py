@@ -17,6 +17,7 @@ import plotly.express as px
 import pandas as pd
 
 # Local files..
+import styles
 import read_data as local_read_data
 import basic_data_analysis as bda
 from app import app
@@ -27,6 +28,20 @@ LOADED_DF_NAMES = {}  # dict of dict -- keys: df_names, value: {'source_file', '
 ACTIVE_DF = ''
 LOADED_DFS = dict()
 
+def get_df_button_comp(button_df_name):
+    comp = html.Button(button_df_name, 
+            id={'type': 'df_button', 'index': f'submit_{button_df_name}'},
+            style=styles.DF_SELECTION_BUTTON
+        )
+    return comp 
+
+def get_df_from_current_content(current_df_content, active_df_name):
+    df_temp = pd.DataFrame()
+    if active_df_name is not None:
+        if active_df_name != "":
+            df_dict = current_df_content[active_df_name]
+            df_temp = pd.DataFrame.from_dict(df_dict)
+    return df_temp
 
 def update_loaded_files_navContent(loaded_dfs_children, new_df_name):
     ids = []
@@ -36,7 +51,7 @@ def update_loaded_files_navContent(loaded_dfs_children, new_df_name):
             ids.append(df_id)
     print(ids)
     if new_df_name not in ids:
-        new_comp = html.Button(new_df_name, id={'type': 'df_button', 'index': f'submit_{new_df_name}'} )
+        new_comp = get_df_button_comp(new_df_name)
         if loaded_dfs_children is None:
             loaded_dfs_children = [new_comp]
         else:
@@ -95,9 +110,8 @@ def refresh_DF_display(clicks):
 # ##############
 # Callback for loading new data:
 @app.callback(
-        [ 
-            Output('loaded_df_info', 'data'),
-            Output('loaded_df_content', 'data')
+        [ Output('loaded_df_info', 'data'),
+        Output('loaded_df_content', 'data')
         ],
         Input(component_id='upload-data', component_property='contents'),
         State(component_id='upload-data', component_property='filename'),
@@ -108,7 +122,9 @@ def refresh_DF_display(clicks):
 def upload_new_data(content, file_name, file_date, current_df_info, current_df_content):
     # First backup 
     trig = dash.callback_context.triggered[0]
-
+    print(trig)
+    print(current_df_info)
+    print('-------')
     new_df_name = 'df_0'
     new_df_content = {}
     new_df_info = {}
@@ -117,8 +133,8 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
         new_df_content = current_df_content
         new_df_info = current_df_info
     
-    if trig['prop_id'].startswith('upload-data.contents'):
-        if content is not None:
+    if content is not None:
+        if trig['prop_id'].startswith('upload-data.contents'):
             # Load data first and then parse it..
 
             df_temp = local_read_data.load_data(content, file_name, file_date)
@@ -128,7 +144,12 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                         'source_file': file_name, 
                         'last_updated': file_date
                     }
-            
+                print('---- new df info: -----')
+                print(new_df_info)
+        
+    if new_df_content == current_df_info:
+        raise PreventUpdate
+    print('-- going to return.. ----')
     return new_df_info, new_df_content
 
 # Callback for changing what is an active DF 
@@ -149,6 +170,7 @@ def update_active_df_name(current_df_info, button_clicks):
             latest_df_name = list(current_df_info.keys())[-1]
     return latest_df_name
     
+
 # Change the displayed values if active_df is changed:
 @app.callback(
         Output(component_id='output-data-upload', component_property='children'),
@@ -160,14 +182,15 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
     # Assume you need to display last updated value.
     
     df_content = html.Div()
-    if active_df_name is not None: 
-        df_dict = current_df_content[active_df_name]
-        df_temp = pd.DataFrame.from_dict(df_dict)[list (df_dict[0].keys())]
-        if not df_temp.empty:
-            df_info = current_df_info[active_df_name]
-            file_name = df_info['source_file']
-            file_date = df_info['last_updated']
-            df_content = [local_read_data.parse_contents(df_temp, file_name, file_date)]
+    #if active_df_name is not None: 
+    #    df_dict = current_df_content[active_df_name]
+    #    df_temp = pd.DataFrame.from_dict(df_dict)[list (df_dict[0].keys())]
+    df_temp = get_df_from_current_content(current_df_content, active_df_name)
+    if not df_temp.empty:
+        df_info = current_df_info[active_df_name]
+        file_name = df_info['source_file']
+        file_date = df_info['last_updated']
+        df_content = [local_read_data.parse_contents(df_temp, file_name, file_date)]
         
     return df_content
 
@@ -187,7 +210,8 @@ def update_displayed_df_list(current_df_info): # (active_df_name, loaded_dfs_chi
     # load_files_content = update_loaded_files_navContent(loaded_dfs_children, active_df_name)
     
     for df_name in current_df_info:
-        new_comp = html.Button(df_name, id={'type': 'df_button', 'index': f'submit_{df_name}'} )
+        # new_comp = html.Button(df_name, id={'type': 'df_button', 'index': f'submit_{df_name}'} )
+        new_comp = get_df_button_comp(df_name)
         df_content.append(new_comp)
         
     return df_content
@@ -203,6 +227,71 @@ def update_displayed_df_list(current_df_info): # (active_df_name, loaded_dfs_chi
     )
 # Function to execute: 
 def update_data_analysis_results(button_clicks, current_df_content, active_df_name):
+    trig = dash.callback_context.triggered[0]
+    print(trig)
+    print(active_df_name)
+    res = html.P("")
+    action = ""
+    mapped_buttons = ['da_describe', 'da_shape', 'da_columns', 'da_Plot']
+    for btn in mapped_buttons:
+        if btn in trig['prop_id']:
+            action = btn 
+    print('Action ==> ', action )
+    if action != "":
+        df_temp = get_df_from_current_content(current_df_content, active_df_name)
+        if not df_temp.empty:
+            res = bda.get_data_analysis_output(action, df_temp)
+    elif 'active_df_name.data' in trig['prop_id']:
+        return html.P("")
+    return res
+
+@app.callback(
+    Output('click-data', 'children'),
+    Input('table', 'active_cell'),
+    State('table', 'data'),
+    State('loaded_df_content', 'data'),
+    State('active_df_name', 'data')
+)
+def display_click_data(active_cell, table_data, current_df_content, active_df_name):
+    # Expected table row content: {'Column Name': 'High', 'Data type': 'Float', 'Null Count': '0'}
+    if active_cell:
+        cell = json.dumps(active_cell, indent=2)    
+        row = active_cell['row']
+        col = active_cell['column_id']
+        value = table_data[row][col]
+        
+        column_name = table_data[row]['Column Name']
+        column_type = table_data[row]['Data type']
+
+        df_temp = get_df_from_current_content(current_df_content, active_df_name)
+        if not df_temp.empty:
+            dd = df_temp[column_name].describe().to_dict()
+            out = '%s\n------\n' % (value)
+
+            for key in dd.keys():
+                out += '%s: %s \n' % (key, dd[key])
+        else:
+            out = '%s\n%s' % (cell, value)
+    else:
+        out = 'no cell selected'
+    return out
+
+'''
+
+'''
+
+'''
+# #################
+# Callback for displaying more info in the div_df_col_results 
+# Triggered by clicking on DF column list.
+@app.callback(
+    Output(component_id='div_data_results', component_property='children'),
+    Input({'type': 'df_column_list', 'index': ALL}, 'n_clicks'),
+        State('loaded_df_content', 'data'),
+        Input('active_df_name', 'data')
+    )
+# Function to execute: 
+def update_df_column_results(button_clicks, current_df_content, active_df_name):
     trig = dash.callback_context.triggered[0]
     print(trig)
     print(active_df_name)
@@ -223,3 +312,5 @@ def update_data_analysis_results(button_clicks, current_df_content, active_df_na
     elif 'active_df_name.data' in trig['prop_id']:
         return html.P("")
     return res
+
+'''

@@ -35,7 +35,7 @@ import read_data as local_read_data
 from app import app
 from app import server
 
-
+ENV = 'development'
 
 # ***
 # Sidebar / Left-side pane
@@ -44,17 +44,20 @@ from app import server
 def upload_file():
     return dcc.Upload(
         id='upload-data',
-        children=[html.A('Load from files', className="nav-item nav-link active btn")],
+        children=[html.A('Load from files', className="nav-item nav-link active btn btn-sm")],
         multiple = False
     )
 
+title = 'Data analysis made easy:'
 sidebar = html.Div(
     [
-        html.H4("Loaded Data"),
+        html.H5(children=title),
         html.Hr(),
+        html.P("Loaded DataFrames"),
         dbc.Nav(
             [   html.Div(id="div_loaded_dfs", children=[] ),
                 html.Div(id='disp_button', children=[]),
+                html.Hr(),
                 upload_file(),
         
             ],
@@ -75,13 +78,14 @@ sidebar = html.Div(
 # ##############
 # Data analysis options: Using Pandas
 # Buttons and Display div.
-
 DATA_ANALYSIS_OPTIONS = html.Div(
     id="div_data_analysis_options", 
     children = [
             html.Nav(className = "nav nav-pills justify-content-right", children=[
-                html.A('Desc', className="nav-item nav-link active py-1", 
-                    id={'type': 'da_button', 'index': 'da_describe'}),
+                html.A('Data', className="nav-item nav-link active py-1", 
+                    id={'type': 'da_button', 'index': 'da_do_nothing'}),
+                html.A('Plot', className="nav-item nav-link py-1", 
+                    id={'type': 'da_button', 'index': 'da_Plot'}),
                 html.A('Shape', className="nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_shape'}),
                 html.A('Columns', className="nav-item nav-link py-1", 
@@ -89,15 +93,14 @@ DATA_ANALYSIS_OPTIONS = html.Div(
                 ])
         ]
     )
-DATA_RESULTS = html.Div(id='div_data_results', children=[], style=styles.RedBorder )
-
-title = 'Data analysis made easy:'
+DF_RESULTS = html.Div(id='div_data_results', children=[] )  # , style=styles.RedBorder
+DF_COLUMN_RESULTS = html.Div(id='div_df_col_results', children=[] )  # , style=styles.RedBorder
 content = html.Div(id="content_div", 
     children=[
-        html.H4(children=title),
-        html.Hr(),
         DATA_ANALYSIS_OPTIONS,
-        DATA_RESULTS,
+        html.Hr(),
+        DF_RESULTS,
+        DF_COLUMN_RESULTS,
         html.Div(id="output-data-upload", children=[])
     ], 
     style=styles.CONTENT_STYLE)
@@ -121,4 +124,12 @@ app.layout = html.Div([
 # Main program call
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    if ENV == 'development':
+        app.run_server(debug=True, port=8050)
+    else:
+        app.run_server(host='127.0.0.1', port='47518', proxy=None, debug=False, 
+            dev_tools_ui=None, dev_tools_props_check=None, dev_tools_serve_dev_bundles=None, 
+            dev_tools_hot_reload=None, dev_tools_hot_reload_interval=None, 
+            dev_tools_hot_reload_watch_interval=None, dev_tools_hot_reload_max_retry=None, 
+            dev_tools_silence_routes_logging=None, dev_tools_prune_errors=None)
+    

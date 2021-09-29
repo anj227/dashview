@@ -185,9 +185,10 @@ def update_output(content, file_name, file_date, loaded_dfs_children, button_cli
     load_files_content = loaded_dfs_children
     df_content = html.Div()
     loaded_dfs_to_store = loaded_dfs_data
-    if trig['prop_id'].startswith('upload-data.contents'):
 
-        if content is not None:
+    if content is not None:
+        if trig['prop_id'].startswith('upload-data.contents'):
+
             # Load data first and then parse it..
 
             n = len(LOADED_DF_NAMES)

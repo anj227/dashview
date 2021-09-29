@@ -23,3 +23,18 @@ CONTENT_STYLE = {
     #"margin-right": "2rem",
     "padding": "2rem 1rem",
 }
+
+INFO_TEXT = {
+    "font-size": "0.8em",
+    "font-style": "italic",
+    "color": "#6666AA",
+}
+
+DF_SELECTION_BUTTON = {
+    "width": "100%",
+    "padding": "10px",
+}
+
+xy_dropdown = {
+    "width": "50%",
+}
