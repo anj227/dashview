@@ -178,16 +178,18 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                 print(new_df_info)
     elif "edit_ops.data" in trig_prop_id:
         value = trig['value']
-        if value['ops'] == 'new_column':
-            df_temp = get_df_from_current_content(current_df_content, active_df_name)
-            if not df_temp.empty:
-                print('Current active name: ', active_df_name)
-                print(df_temp.head())
-                df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
-                new_df_content[active_df_name] = df_temp.to_dict('records')
-        print('-- going to return here... ----')
-        return new_df_info, new_df_content
-
+        if value is not None:
+            if value['ops'] == 'new_column':
+                df_temp = get_df_from_current_content(current_df_content, active_df_name)
+                if not df_temp.empty:
+                    print('Current active name: ', active_df_name)
+                    print(df_temp.head())
+                    df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
+                    new_df_content[active_df_name] = df_temp.to_dict('records')
+            print('-- going to return here... ----')
+            return new_df_info, new_df_content
+        else:
+            raise PreventUpdate
     if new_df_content == current_df_info:        
         raise PreventUpdate
     print('-- going to return.. ----')
@@ -212,7 +214,7 @@ def update_active_df_name(current_df_info, button_clicks, current_active_df_name
     else:
         if current_active_df_name is not None:
             latest_df_name = current_active_df_name
-        elif current_df_info != {}: 
+        elif current_df_info is not None and current_df_info != {}: 
             # latest_df_name = list(current_df_info.keys())[-1]
             # Get the most recent loaded df:
             n = len(current_df_info)
@@ -261,6 +263,9 @@ def update_displayed_df_list(current_df_info):
     # if active_df_name is not None: 
     # load_files_content = update_loaded_files_navContent(loaded_dfs_children, active_df_name)
     
+    if current_df_info is None:
+        raise PreventUpdate
+
     for df_name in current_df_info:
         # new_comp = html.Button(df_name, id={'type': 'df_button', 'index': f'submit_{df_name}'} )
         new_comp = get_df_button_comp(df_name)
@@ -346,6 +351,7 @@ def update_plot(dropdown_value, current_df_content, active_df_name):
 )
 def display_click_data(active_cell, table_data, current_df_content, active_df_name):
     # Expected table row content: {'Column Name': 'High', 'Data type': 'Float', 'Null Count': '0'}
+    # For displaying more information about a specific column data clicked.
     if active_cell:
         cell = json.dumps(active_cell, indent=2)    
         row = active_cell['row']
@@ -365,7 +371,7 @@ def display_click_data(active_cell, table_data, current_df_content, active_df_na
         else:
             out = '%s\n%s' % (cell, value)
     else:
-        out = 'no cell selected'
+        out = '' # 'no cell selected'
     return out
 
 
