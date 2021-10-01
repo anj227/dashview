@@ -87,7 +87,9 @@ def load_data(contents, filename, date):
 def parse_contents(df, filename, date):
     print('Trying to parse at load time..')
     max_lines = 1000
-    txt = 'File name: ' + filename  + ', Modified at: ' + str(datetime.datetime.fromtimestamp(date))
+    txt = 'File name: ' + filename  
+    if date is not None:
+        txt += ', Modified at: ' + str(datetime.datetime.fromtimestamp(date))
     return html.Div([
         html.P(txt, style=styles.INFO_TEXT ),
         display_dash_table(df, max_lines),

@@ -1,10 +1,14 @@
 import io
 import dash
 from dash import dash_table, html, dcc
-import styles
+from dash.dependencies import Input, Output, State, MATCH, ALL
+
 import numpy as np 
 import pandas as pd
-import plotly.express as px
+
+import styles
+from app import app
+import plot_data as plot_data 
 
 def get_column_type(dtype_kind):
     print(dtype_kind)
@@ -41,34 +45,7 @@ def get_table_with_clickable_data(df_new):
     )
     return dash_table_obj
 
-def create_interactive_plot(df):
 
-    cols = list(df.columns)
-    col1 = df.columns[0]
-    col2 = df.columns[1]
-    fig = px.scatter(df, x=col1, y=col2)
-    output = html.Div([
-        # -- drop down example
-        dcc.Dropdown(
-            id='x-axis-dropdown',
-            options=[ {'label': col, 'value': col} for col in cols ],
-            multi=False,
-            placeholder="X-axis",
-            style=styles.xy_dropdown
-        ),
-        html.Div(id='x-axis-selection-container'),
-        dcc.Dropdown(
-            id='y-axis-dropdown',
-            options=[ {'label': col, 'value': col} for col in cols ],
-            multi=True,
-            placeholder="Y-axis",
-            style=styles.xy_dropdown
-        ),
-        html.Div(id='y-axis-selection-container'),
-        # -- End of example 
-        dcc.Graph(figure=fig),
-    ])
-    return output 
 
 def get_data_analysis_output(action, df):
     print(df)
@@ -83,9 +60,6 @@ def get_data_analysis_output(action, df):
         ]
         return res 
     elif action == 'da_columns':
-        # Get a list of columns - 
-        # For each column, get the total non-null values 
-        # 
         cols = df.columns 
         all_lines = []
         for col in cols: 
@@ -100,7 +74,30 @@ def get_data_analysis_output(action, df):
         df_content = get_table_with_clickable_data(df_new)
         return df_content
     elif action == 'da_Plot':
-        interactive_plot = create_interactive_plot(df)
+        interactive_plot = plot_data.create_interactive_plot(df)
         return interactive_plot
+    elif action == 'da_edits':
+        # Right now do it for adding column based on some math..
+        cols = df.columns
+        example_text = ""
+        if len(cols) > 1:
+            example_text = f"New_Column = {cols[0]} + {cols[1]}"
+        else:
+            example_text = f"New_Column = 2 * {cols[0]} "
+        res = html.Div( id = 'get_edit_options_div',
+            children = [
+                html.P("Provide formula in terms of existing columns: "),
+                html.P("Example: "),
+                html.P(example_text),
+                dcc.Textarea(
+                    id="new_column_formula_txt", 
+                    value="",
+                    placeholder = "Formula",
+                    style={'width': '100%', 'height': "2em"},
+                ),
+                html.Button('Submit', id='new_column_formula_txt_button', n_clicks=0),
+                html.Hr()
+            ])
+        return res
     else:
         return html.P("Need to perform action: " + action)

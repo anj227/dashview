@@ -19,6 +19,7 @@ import pandas as pd
 # Local files..
 import styles
 import read_data as local_read_data
+import plot_data as plot_data 
 import basic_data_analysis as bda
 from app import app
 from app import server
@@ -94,7 +95,27 @@ def refresh_DF_display(clicks):
     return df_content
 
  
-
+## Change instructions for data changes
+@app.callback(
+    Output(component_id='edit_ops', component_property='data'),
+    Input(component_id='new_column_formula_txt_button', component_property='n_clicks'),
+    Input(component_id='new_column_formula_txt', component_property='value'),
+    )
+def update_edit_ops_info(clicks, in_value):
+    trig = dash.callback_context.triggered[0]
+    # Trigger only when submit is clicked.. ignore changes to input text..
+    trig_prop_id = trig['prop_id']
+    # print (trig_prop_id)
+    if 'new_column_formula_txt_button' in trig_prop_id:
+        print(in_value)
+        # hard-coded values
+        new_val = {'ops': 'new_column', 'new_name': 'daily_diff', 'operation': 'df_0.high - df_0.low'}
+        print('Changing edit_ops by: ')
+        print(new_val)
+        return new_val
+        # df = df.assign(daily_diff = df.high - df.low)
+    else:
+        raise PreventUpdate
 
 # New callbacks:
 # 1. load_data --> triggers when upload-data is changed 
@@ -117,37 +138,57 @@ def refresh_DF_display(clicks):
         State(component_id='upload-data', component_property='filename'),
         State(component_id='upload-data', component_property='last_modified'),
         State('loaded_df_info', 'data'),          # Changed from input --> state
-        State('loaded_df_content', 'data')
+        State('loaded_df_content', 'data'),
+        Input(component_id='edit_ops', component_property='data'),
+        State('active_df_name', 'data')
     )
-def upload_new_data(content, file_name, file_date, current_df_info, current_df_content):
+def upload_new_data(content, file_name, file_date, current_df_info, current_df_content, 
+        edit_ops, active_df_name):
+    print('I am here..')
     # First backup 
     trig = dash.callback_context.triggered[0]
-    print(trig)
+    # print(trig)
     print(current_df_info)
     print('-------')
-    new_df_name = 'df_0'
+    trig_prop_id = trig['prop_id']
+    n = 0
+    new_df_name = f'df_{n}'
     new_df_content = {}
     new_df_info = {}
+    edit_ops_to_do = {}
     if current_df_info is not None:
-        new_df_name = f'df_{len(current_df_info)}'
+        n = len(current_df_info)
+        new_df_name = f'df_{n}'
         new_df_content = current_df_content
         new_df_info = current_df_info
     
     if content is not None:
-        if trig['prop_id'].startswith('upload-data.contents'):
+        if trig_prop_id.startswith('upload-data.contents'):
             # Load data first and then parse it..
 
             df_temp = local_read_data.load_data(content, file_name, file_date)
-            new_df_content[new_df_name] = df_temp.to_dict('records')
             if not df_temp.empty:
+                new_df_content[new_df_name] = df_temp.to_dict('records')
                 new_df_info[new_df_name] = {
                         'source_file': file_name, 
-                        'last_updated': file_date
+                        'last_updated': file_date,
+                        'data_load_counter': n
                     }
                 print('---- new df info: -----')
                 print(new_df_info)
-        
-    if new_df_content == current_df_info:
+    elif "edit_ops.data" in trig_prop_id:
+        value = trig['value']
+        if value['ops'] == 'new_column':
+            df_temp = get_df_from_current_content(current_df_content, active_df_name)
+            if not df_temp.empty:
+                print('Current active name: ', active_df_name)
+                print(df_temp.head())
+                df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
+                new_df_content[active_df_name] = df_temp.to_dict('records')
+        print('-- going to return here... ----')
+        return new_df_info, new_df_content
+
+    if new_df_content == current_df_info:        
         raise PreventUpdate
     print('-- going to return.. ----')
     return new_df_info, new_df_content
@@ -157,17 +198,30 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
         Output('active_df_name', 'data'),
         Input('loaded_df_info', 'data'), 
         Input({'type': 'df_button', 'index': ALL}, 'n_clicks'), 
+        State('active_df_name', 'data'),
     )
-def update_active_df_name(current_df_info, button_clicks):
+def update_active_df_name(current_df_info, button_clicks, current_active_df_name):
     # Assume you need to display last updated value.
     trig = dash.callback_context.triggered[0]
     latest_df_name = None 
+    print('In update_active_df_name: ', current_active_df_name)
+    print(trig['prop_id'])
     if '"type":"df_button"' in trig['prop_id']:
         # Data didn't change -- only the click on the DF name..
         latest_df_name = get_active_df_name_from_button(button_clicks)
     else:
-        if current_df_info != {}: 
-            latest_df_name = list(current_df_info.keys())[-1]
+        if current_active_df_name is not None:
+            latest_df_name = current_active_df_name
+        elif current_df_info != {}: 
+            # latest_df_name = list(current_df_info.keys())[-1]
+            # Get the most recent loaded df:
+            n = len(current_df_info)
+            for ci in current_df_info:
+                cc = current_df_info[ci]
+                if cc['data_load_counter'] == n:
+                    latest_df_name = ci
+
+    print("Latest df name: ", latest_df_name)
     return latest_df_name
     
 
@@ -197,11 +251,9 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
 # Update div_loaded_dfs as new DFs are loaded..
 @app.callback(
         Output(component_id='div_loaded_dfs', component_property='children'),
-        # Input('active_df_name', 'data'),
-        Input('loaded_df_info', 'data'),
-        # State('div_loaded_dfs', 'children'),         
+        Input('loaded_df_info', 'data')
     )
-def update_displayed_df_list(current_df_info): # (active_df_name, loaded_dfs_children):
+def update_displayed_df_list(current_df_info): 
     # Assume you need to display last updated value.
     df_content = []
     # load_files_content = loaded_dfs_children
@@ -222,28 +274,68 @@ def update_displayed_df_list(current_df_info): # (active_df_name, loaded_dfs_chi
 @app.callback(
     Output(component_id='div_data_results', component_property='children'),
     Input({'type': 'da_button', 'index': ALL}, 'n_clicks'),
-        State('loaded_df_content', 'data'),
-        Input('active_df_name', 'data')
+    State('loaded_df_content', 'data'),
+    Input('active_df_name', 'data')
     )
 # Function to execute: 
 def update_data_analysis_results(button_clicks, current_df_content, active_df_name):
     trig = dash.callback_context.triggered[0]
+    print('------- Check this...--------')
     print(trig)
     print(active_df_name)
-    res = html.P("")
+    print('--------------')
     action = ""
-    mapped_buttons = ['da_describe', 'da_shape', 'da_columns', 'da_Plot']
+    trig_prop_id = trig['prop_id']
+
+    mapped_buttons = ['da_describe', 'da_shape', 'da_columns', 'da_Plot', 'da_edits']
     for btn in mapped_buttons:
-        if btn in trig['prop_id']:
+        if btn in trig_prop_id:
             action = btn 
     print('Action ==> ', action )
-    if action != "":
-        df_temp = get_df_from_current_content(current_df_content, active_df_name)
-        if not df_temp.empty:
-            res = bda.get_data_analysis_output(action, df_temp)
-    elif 'active_df_name.data' in trig['prop_id']:
-        return html.P("")
+
+    res = html.P("")
+    if trig_prop_id != '.':
+        if 'active_df_name.data' in trig_prop_id:
+            return html.P("")
+        elif action != "":
+            df_temp = get_df_from_current_content(current_df_content, active_df_name)
+            if not df_temp.empty:
+                res = bda.get_data_analysis_output(action, df_temp)
+
     return res
+
+# #################
+# Callback for refreshing the plot.. Input: x or y-axis changes
+
+@app.callback(
+    # Output(component_id='x-y-axis-selection-container', component_property='children'),
+    Output(component_id='graph_id', component_property='figure'),
+    Input({'type': 'da_plot_input', 'index': ALL}, 'value'),
+        State('loaded_df_content', 'data'),
+        State('active_df_name', 'data')
+    )
+# Function to execute: 
+def update_plot(dropdown_value, current_df_content, active_df_name):
+    trig = dash.callback_context.triggered[0]
+    print(trig)
+    print(dropdown_value)
+    if trig['prop_id'] != '.':
+        json_string = trig['prop_id'].replace('.value', '')
+        jz = json.loads(json_string)
+        dropdown_id = jz['index']
+        df_temp = get_df_from_current_content(current_df_content, active_df_name)
+        colX = dropdown_value[0]
+        colY = dropdown_value[1]
+        plot_type = dropdown_value[2]
+        if not df_temp.empty:
+            #interactive_plot = plot_data.create_interactive_plot(df_temp)
+            fig = plot_data.get_figure(df_temp, colX, colY, plot_type)
+        return fig
+        # get_data_analysis_output
+    else:    
+        # Don't do anything..
+        raise PreventUpdate   
+
 
 @app.callback(
     Output('click-data', 'children'),
@@ -276,41 +368,4 @@ def display_click_data(active_cell, table_data, current_df_content, active_df_na
         out = 'no cell selected'
     return out
 
-'''
 
-'''
-
-'''
-# #################
-# Callback for displaying more info in the div_df_col_results 
-# Triggered by clicking on DF column list.
-@app.callback(
-    Output(component_id='div_data_results', component_property='children'),
-    Input({'type': 'df_column_list', 'index': ALL}, 'n_clicks'),
-        State('loaded_df_content', 'data'),
-        Input('active_df_name', 'data')
-    )
-# Function to execute: 
-def update_df_column_results(button_clicks, current_df_content, active_df_name):
-    trig = dash.callback_context.triggered[0]
-    print(trig)
-    print(active_df_name)
-    res = html.P("Nothing to show: ")
-    action = ""
-    mapped_buttons = ['da_describe', 'da_shape', 'da_columns']
-    for btn in mapped_buttons:
-        if btn in trig['prop_id']:
-            action = btn 
-    print('Action ==> ', action )
-    if action != "":
-        if active_df_name is not None:
-            if active_df_name != "":
-                df_dict = current_df_content[active_df_name]
-                df_temp = pd.DataFrame.from_dict(df_dict)
-                if not df_temp.empty:
-                    res = bda.get_data_analysis_output(action, df_temp)
-    elif 'active_df_name.data' in trig['prop_id']:
-        return html.P("")
-    return res
-
-'''

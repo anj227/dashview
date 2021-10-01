@@ -89,7 +89,9 @@ DATA_ANALYSIS_OPTIONS = html.Div(
                 html.A('Shape', className="nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_shape'}),
                 html.A('Columns', className="nav-item nav-link py-1", 
-                    id={'type': 'da_button', 'index': 'da_columns'})
+                    id={'type': 'da_button', 'index': 'da_columns'}),
+                html.A('Edit', className="nav-item nav-link py-1", 
+                    id={'type': 'da_button', 'index': 'da_edits'})
                 ])
         ]
     )
@@ -117,6 +119,7 @@ app.layout = html.Div([
     dcc.Store(id='loaded_df_content', storage_type='local'),   # , storage_type='session'
     dcc.Store(id='active_df_name', storage_type='local'),
     dcc.Store(id='active_df_content', storage_type='local'),
+    dcc.Store(id='edit_ops', storage_type='local'),
 ])
 
 
