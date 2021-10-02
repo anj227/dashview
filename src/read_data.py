@@ -84,8 +84,17 @@ def load_data(contents, filename, date):
         error_string="Error loading data.. "
     return df
 
+def remove_df(current_df_info, current_df_content, delete_df_name):
+    # Mark df info inactive, and set content to None 
+    for indx, cc in enumerate(current_df_info):
+        if cc == delete_df_name:
+            cc_info = current_df_info[cc]
+            if cc_info['active_status']:
+                current_df_info[cc]['active_status'] = False
+                current_df_content[cc] = {} 
+    return current_df_info, current_df_content
+
 def parse_contents(df, filename, date):
-    print('Trying to parse at load time..')
     max_lines = 1000
     txt = 'File name: ' + filename  
     if date is not None:

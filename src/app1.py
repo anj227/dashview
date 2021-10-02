@@ -91,7 +91,9 @@ DATA_ANALYSIS_OPTIONS = html.Div(
                 html.A('Columns', className="nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_columns'}),
                 html.A('Edit', className="nav-item nav-link py-1", 
-                    id={'type': 'da_button', 'index': 'da_edits'})
+                    id={'type': 'da_button', 'index': 'da_edits'}),
+                html.A('Delete', className="nav-item nav-link py-1", 
+                    id='df_delete')
                 ])
         ]
     )
