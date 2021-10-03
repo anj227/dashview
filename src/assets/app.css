@@ -18,7 +18,7 @@ h1, h2, h3, h4, h5, h6 {
 *[data-dash-is-loading="true"]::before{
     content: "Loading...";
     display: inline-block;
-    color: magenta;
+    color: lightgrey;
     visibility: visible;
 }
 
@@ -28,3 +28,11 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: thin lightgrey solid;
 }
 
+.text_align_left{
+    text-align: left !important;
+    padding-left: 6px;
+}
+
+input[type="radio"] {
+  margin-right: 10px;
+}

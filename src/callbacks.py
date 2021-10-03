@@ -21,6 +21,7 @@ import styles
 import read_data as local_read_data
 import plot_data as plot_data 
 import basic_data_analysis as bda
+import settings as global_settings
 from app import app
 from app import server
 
@@ -31,12 +32,16 @@ LOADED_DFS = dict()
 
 def get_df_button_comp(button_df_name, source_data=None):
     button_display_name = button_df_name
+    # Add file name to the display, if available.
     if source_data is not None and source_data != "":
         button_display_name += f" ({source_data})"
+    
+    
     comp = html.Button(button_display_name, 
             id={'type': 'df_button', 'index': f'submit_{button_df_name}'},
-            style=styles.DF_SELECTION_BUTTON
+            className=f'{button_df_name} btn btn-sm  w-100 text_align_left',
         )
+    
     return comp 
 
 def get_df_from_current_content(current_df_content, active_df_name):
@@ -81,26 +86,6 @@ def get_active_df_name_from_button(clicks):
             
     return chosen_df_name
     
-def refresh_DF_display(clicks):
-    trig = dash.callback_context.triggered[0]
-    # sample output:  {'prop_id': 'submit_nothing.n_clicks', 'value': 2}
-    new_df = ''
-    if trig != '':
-        prop = trig['prop_id']
-        if prop != '.':
-            tmp_b = prop.replace('.n_clicks', '')
-            tmp_json = json.loads(tmp_b)
-            new_df = tmp_json['index'].replace('submit_', '')
-    
-    df_temp = LOADED_DFS[new_df]
-    add_info = LOADED_DF_NAMES[new_df]
-    file_name = add_info['source_file']
-    file_date = add_info['last_updated']
-
-    df_content = [local_read_data.parse_contents(df_temp, file_name, file_date)]
-    return df_content
-
- 
 ## Change instructions for data changes
 @app.callback(
     Output(component_id='edit_ops', component_property='data'),
@@ -279,13 +264,15 @@ def update_displayed_df_list(current_df_info, current_displayed_df):
     if current_df_info is None:
         raise PreventUpdate
 
+    
+    
     for df_name in current_df_info:
         df_info = current_df_info[df_name]
         if df_info['active_status']:
             file_source = df_info['source_file']
             new_comp = get_df_button_comp(df_name, file_source)
             df_content.append(new_comp)
-        
+    
     return df_content
 
 # ##############
@@ -294,20 +281,28 @@ def update_displayed_df_list(current_df_info, current_displayed_df):
 @app.callback(
     Output(component_id='div_data_results', component_property='children'),
     Input({'type': 'da_button', 'index': ALL}, 'n_clicks'),
+    Input({'type': 'da_radio_item', 'index': ALL}, 'value'),
+    # Input("da_options", "value"),
     State('loaded_df_content', 'data'),
     Input('active_df_name', 'data')
     )
 # Function to execute: 
-def update_data_analysis_results(button_clicks, current_df_content, active_df_name):
+def update_data_analysis_results(button_clicks, da_options, current_df_content, active_df_name):
     trig = dash.callback_context.triggered[0]
     action = ""
     trig_prop_id = trig['prop_id']
-
-    mapped_buttons = ['da_describe', 'da_shape', 'da_columns', 'da_Plot', 'da_edits']
+    print(trig_prop_id)
+    print('--------')
+    mapped_buttons = global_settings.MAPPED_BUTTONS
     for btn in mapped_buttons:
         if btn in trig_prop_id:
             action = btn 
     
+    if "da_radio_item" in trig_prop_id:
+        val = trig['value']
+        valid_values = ['Shape', 'Correlation', 'Describe']
+        if val in valid_values: 
+            action = val 
     res = html.P("")
     if trig_prop_id != '.':
         if 'active_df_name.data' in trig_prop_id:
@@ -381,5 +376,75 @@ def display_click_data(active_cell, table_data, current_df_content, active_df_na
     else:
         out = '' # 'no cell selected'
     return out
+
+# To activate buttons..
+TOP_NAV_BUTTONS = ['da_do_nothing', 'da_Plot', 'da_shape', 'da_columns', 'da_edits', 'da_options']
+@app.callback(
+    Output({'type': 'da_button', 'index': ALL}, "className"),
+    Input({'type': 'da_button', 'index': ALL}, 'n_clicks'),
+    State({'type': 'da_button', 'index': ALL}, "className"),
+)
+def set_active(n_clicks, current_classes):
+    trig = dash.callback_context.triggered[0]
+    prop_id = trig['prop_id']
+    if prop_id == '.':
+        raise PreventUpdate
+    else:
+        tmp_b = prop_id.replace('.n_clicks', '')
+        tmp_json = json.loads(tmp_b)
+        button_clicked = tmp_json['index']
+
+        new_classes = []
+        for btn_classes in current_classes:
+            cls = btn_classes.split(' ')
+            if button_clicked in cls: 
+                if 'active' not in cls: 
+                    cls.append('active')
+            else:
+                if 'active' in cls: 
+                    cls.remove('active')
+            class_string = " ".join(cls)
+            new_classes.append(class_string)
+        return new_classes 
+
+
+@app.callback(
+    Output({'type': 'df_button', 'index': ALL}, "className"),
+    Input('active_df_name', 'data'),
+    State({'type': 'df_button', 'index': ALL}, "className"),
+)
+def set_active_df_button(active_df_name, current_classes):
+    # 
+    active_class = 'btn-info' # 'btn-info'
+    inactive_class = 'btn-light' # 'btn-light'
+
+    trig = dash.callback_context.triggered[0]
+    prop_id = trig['prop_id']
+    if active_df_name is None:
+        raise PreventUpdate
+    if prop_id == '.':
+        raise PreventUpdate
+    else:
+        new_classes = []
+        for df_cls in current_classes:
+            cls = df_cls.split(' ')
+            if active_df_name in cls:
+                if active_class not in cls:
+                    cls.append(active_class)
+                if inactive_class in cls:
+                    cls.remove(inactive_class)
+            else:
+                if active_class in cls:
+                    cls.remove(active_class)
+                if inactive_class not in cls:
+                    cls.append(inactive_class)
+            class_string = " ".join(cls)
+            new_classes.append(class_string)
+        return new_classes
+
+
+
+
+
 
 

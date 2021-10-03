@@ -44,7 +44,8 @@ ENV = 'development'
 def upload_file():
     return dcc.Upload(
         id='upload-data',
-        children=[html.A('Load from files', className="nav-item nav-link active btn btn-sm")],
+        children=[html.A('Load from files', 
+            className="nav-item nav-link active btn btn-sm")],
         multiple = False
     )
 
@@ -55,7 +56,8 @@ sidebar = html.Div(
         html.Hr(),
         html.P("Loaded DataFrames"),
         dbc.Nav(
-            [   html.Div(id="div_loaded_dfs", children=[] ),
+            [   
+                html.Div(id="div_loaded_dfs", children=[] ),
                 html.Div(id='disp_button', children=[]),
                 html.Hr(),
                 upload_file(),
@@ -81,18 +83,24 @@ sidebar = html.Div(
 DATA_ANALYSIS_OPTIONS = html.Div(
     id="div_data_analysis_options", 
     children = [
-            html.Nav(className = "nav nav-pills justify-content-right", children=[
-                html.A('Data', className="nav-item nav-link active py-1", 
+            html.Nav(className = "nav nav-pills justify-content-right w-100", children=[
+                
+                html.A('Data', className="da_do_nothing top_nav_buttons nav-item nav-link active py-1", 
                     id={'type': 'da_button', 'index': 'da_do_nothing'}),
-                html.A('Plot', className="nav-item nav-link py-1", 
+                
+                html.A('Plot', className="da_Plot top_nav_buttons nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_Plot'}),
-                html.A('Shape', className="nav-item nav-link py-1", 
-                    id={'type': 'da_button', 'index': 'da_shape'}),
-                html.A('Columns', className="nav-item nav-link py-1", 
+
+                html.A('Columns', className="da_columns top_nav_buttons nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_columns'}),
-                html.A('Edit', className="nav-item nav-link py-1", 
+
+                html.A('Edit', className="da_edits top_nav_buttons nav-item nav-link py-1", 
                     id={'type': 'da_button', 'index': 'da_edits'}),
-                html.A('Delete', className="nav-item nav-link py-1", 
+
+                html.A('Data Analysis', className="da_options top_nav_buttons nav-item nav-link py-1", 
+                    id={'type': 'da_button', 'index': 'da_options'}),
+
+                html.A('Delete', className="nav-item nav-link py-1 ml-auto", 
                     id='df_delete')
                 ])
         ]
