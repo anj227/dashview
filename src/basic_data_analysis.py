@@ -84,36 +84,91 @@ def display_df_column_info(df):
     df_content = get_table_with_clickable_data(df_new)
     return df_content
 
-def display_df_correlation(df):
-    corr = df.corr()
-    corr = corr.reset_index()
+# From dash website:
+def style_row_by_top_values(df, nlargest=2):
+    numeric_columns = df.columns
+    numeric_columns = numeric_columns.drop(['id', 'index'])
+    print(numeric_columns)
 
-    return dash_table.DataTable(
-            data=corr.to_dict('records'),
-            columns=[{'name': i, 'id': i, 'deletable': False, 'renamable': False} for i in corr.columns],
+    styles = []
+    for i in range(len(df)):
+        row = df.loc[i, numeric_columns].sort_values(ascending=False)
+        for j in range(nlargest):
+            print( '----- CHECK: ', row.keys()[j] )
+            styles.append({
+                'if': {
+                    'filter_query': '{{id}} = {}'.format(i),
+                    'column_id': row.keys()[j]
+                },
+                'backgroundColor': '#39CCCC',
+                'color': 'white'
+            })
+    return styles
+
+# {'if': {'filter_query': '{id} = 3', 'column_id': 'sepal_width'}, 
+#   'backgroundColor': '#39CCCC', 'color': 'white'}
+def style_row_by_value(df, columns_to_exclude=[], value_formatting={}):
+    nlargest = 2
+    numeric_columns = df.columns
+    numeric_columns = numeric_columns.drop(columns_to_exclude)
+    
+    styles = []
+    for i in range(len(df)):     # Going row by row..
+        row = df.loc[i, numeric_columns]
+        # print(row.keys(), '  <---- row keys.')
+        for ks in row.keys():
+            row
+            styles.append(
+                {
+                    'if': {'column_id': 'petal_length',"row_index": x},
+                    'backgroundColor': '#3D9970','color': 'white'
+                } 
+                for x in df[df['petal_length']>0.5].id 
+            )
+        print(styles)
+    first_col_style = {'if': {'column_id': 'index'}, 'backgroundColor': '#EAEAEA','fontWeight': 'bold'}
+    styles.append(first_col_style)
+    print(styles)
+    return styles
+
+
+def display_df_correlation(df):
+    corr_df = df.corr()
+
+    for col in corr_df.columns:
+        corr_df[col]=corr_df[col].map('{:,.4f}'.format)
+    
+    corr_df = corr_df.reset_index()
+    
+    corr_df['id'] = corr_df.index
+    print(corr_df)
+    
+    
+    columns_to_exclude = ['id', 'index']
+    value_formatting = {
+        1: {'max': -0.5, 'min': -1, 'bgColor': '#FFAAAA'}, 
+        2: {'max':  0.5, 'min': -0.5, 'bgColor': '#AAFFAA'},
+        3: {'max':  1.0, 'min': 0.5, 'bgColor': '#AAAAFF'},
+    }
+    res = dash_table.DataTable(
+            data=corr_df.to_dict('records'),
+            #columns=[{'name': i, 'id': i, 'deletable': False, 'renamable': False} for i in corr_df.columns],
+            columns=[{'name': i, 'id': i} for i in corr_df.columns if i != 'id'],
             fixed_rows={ 'headers': True, 'data': 0 },
             
             style_table={
                 'overflow': 'scroll', 'font-size': '0.8em'
             },
-            style_data={
-                'width': '150px', 'minWidth': '150px', 'maxWidth': '150px',
-                'overflow': 'hidden',
-                'textOverflow': 'ellipsis',
-            },
-
+            
             style_header={
                 'backgroundColor': '#EAEAEA',
                 'fontWeight': 'bold'
             },
-            # Stripped row:
-            style_data_conditional=[
-                {
-                    'if': {'row_index': 'odd'},
-                    'backgroundColor': '#FAFAFA'
-                }
-            ],
+            #style_data_conditional=style_row_by_value(corr_df, columns_to_exclude, value_formatting),
+            style_data_conditional = style_row_by_top_values(corr_df)
         )
+    print(res)
+    return res 
 
 def display_df_shape(df):
     tup = df.shape

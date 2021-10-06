@@ -332,11 +332,17 @@ def update_plot(dropdown_value, current_df_content, active_df_name):
         jz = json.loads(json_string)
         dropdown_id = jz['index']
         df_temp = get_df_from_current_content(current_df_content, active_df_name)
-        colX = dropdown_value[0]
-        colY = dropdown_value[1]
-        plot_type = dropdown_value[2]
+        plot_type = dropdown_value[0]
+        colX = dropdown_value[1]
+        colY = dropdown_value[2]
+        print(dropdown_value)
         if not df_temp.empty:
             #interactive_plot = plot_data.create_interactive_plot(df_temp)
+            print(df_temp.shape)
+            print(colX)
+            print(colY)
+            print(plot_type)
+            print('-------')
             fig = plot_data.get_figure(df_temp, colX, colY, plot_type)
         return fig
         # get_data_analysis_output

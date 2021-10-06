@@ -105,7 +105,7 @@ DATA_ANALYSIS_OPTIONS = html.Div(
                 ])
         ]
     )
-DF_RESULTS = html.Div(id='div_data_results', children=[] )  # , style=styles.RedBorder
+DF_RESULTS = html.Div(id='div_data_results', children=[], style=styles.DF_RESULTS )  # , style=styles.RedBorder
 DF_COLUMN_RESULTS = html.Div(id='div_df_col_results', children=[] )  # , style=styles.RedBorder
 content = html.Div(id="content_div", 
     children=[

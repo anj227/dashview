@@ -36,5 +36,14 @@ DF_SELECTION_BUTTON = {
 }
 
 xy_dropdown = {
-    "width": "50%",
+    'min-width': '200px',
+    'display': 'inline-block',
+    'verticalAlign': "middle",
+    #"border": "1px solid red",
 }
+# These are not required.. can remove them (kept for debugging)
+
+DF_RESULTS = {
+    "height": "auto",
+}
+
