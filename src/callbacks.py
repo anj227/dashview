@@ -26,6 +26,7 @@ from app import app
 from app import server
 
 
+
 LOADED_DF_NAMES = {}  # dict of dict -- keys: df_names, value: {'source_file', 'last_updated'}
 ACTIVE_DF = ''
 LOADED_DFS = dict()
@@ -89,21 +90,23 @@ def get_active_df_name_from_button(clicks):
 ## Change instructions for data changes
 @app.callback(
     Output(component_id='edit_ops', component_property='data'),
-    Input(component_id='new_column_formula_txt_button', component_property='n_clicks'),
+    Input(component_id='submit_edit', component_property='n_clicks'),
     Input(component_id='new_column_formula_txt', component_property='value'),
+    Input(component_id='ops_type', component_property='value'),
     )
-def update_edit_ops_info(clicks, in_value):
+def update_edit_ops_info(clicks, in_value, ops_type):
     trig = dash.callback_context.triggered[0]
     # Trigger only when submit is clicked.. ignore changes to input text..
+    
     trig_prop_id = trig['prop_id']
-    if 'new_column_formula_txt_button' in trig_prop_id:
-        print(in_value)
-        # hard-coded values
-        new_val = {'ops': 'new_column', 'new_name': 'daily_diff', 'operation': 'df_0.high - df_0.low'}
+    if 'submit_edit' in trig_prop_id:
+        print(in_value, ops_type)
         print('Changing edit_ops by: ')
+        if ops_type == 'add_column':
+            # hard-coded right now.
+            new_val = {'ops': 'new_column', 'new_name': 'daily_diff', 'operation': 'df_0.high - df_0.low'}
         print(new_val)
         return new_val
-        # df = df.assign(daily_diff = df.high - df.low)
     else:
         raise PreventUpdate
 
@@ -122,7 +125,8 @@ def update_edit_ops_info(clicks, in_value):
 # Callback for loading new data:
 @app.callback(
         [ Output('loaded_df_info', 'data'),
-        Output('loaded_df_content', 'data')
+        Output('loaded_df_content', 'data'),
+        Output(component_id='upload-data', component_property='contents'),
         ],
         Input(component_id='upload-data', component_property='contents'),
         State(component_id='upload-data', component_property='filename'),
@@ -164,7 +168,7 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
     elif "df_delete" in trig_prop_id:
         if active_df_name is not None:
             new_df_info, new_df_content = local_read_data.remove_df(current_df_info, current_df_content, active_df_name)
-            return new_df_info, new_df_content
+            return new_df_info, new_df_content, None
         else:
             raise PreventUpdate
 
@@ -176,12 +180,13 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                 if not df_temp.empty:
                     df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
                     new_df_content[active_df_name] = df_temp.to_dict('records')
-            return new_df_info, new_df_content
+            
+            return new_df_info, new_df_content, None
         else:
             raise PreventUpdate
     if new_df_content == current_df_info:        
         raise PreventUpdate
-    return new_df_info, new_df_content
+    return new_df_info, new_df_content, None
 
 # Callback for changing what is an active DF 
 @app.callback(
@@ -310,7 +315,7 @@ def update_data_analysis_results(button_clicks, da_options, current_df_content, 
         elif action != "":
             df_temp = get_df_from_current_content(current_df_content, active_df_name)
             if not df_temp.empty:
-                res = bda.get_data_analysis_output(action, df_temp)
+                res = bda.get_data_analysis_output(action, df_temp, active_df_name)
 
     return res
 
@@ -345,7 +350,6 @@ def update_plot(dropdown_value, current_df_content, active_df_name):
             print('-------')
             fig = plot_data.get_figure(df_temp, colX, colY, plot_type)
         return fig
-        # get_data_analysis_output
     else:    
         # Don't do anything..
         raise PreventUpdate   
@@ -384,7 +388,6 @@ def display_click_data(active_cell, table_data, current_df_content, active_df_na
     return out
 
 # To activate buttons..
-TOP_NAV_BUTTONS = ['da_do_nothing', 'da_Plot', 'da_shape', 'da_columns', 'da_edits', 'da_options']
 @app.callback(
     Output({'type': 'da_button', 'index': ALL}, "className"),
     Input({'type': 'da_button', 'index': ALL}, 'n_clicks'),

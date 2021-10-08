@@ -53,7 +53,8 @@ def display_df_edit_options(df):
                 placeholder = "Formula",
                 style={'width': '100%', 'height': "2em"},
             ),
-            html.Button('Submit', id='new_column_formula_txt_button', n_clicks=0),
+            dcc.Textarea(id="ops_type", value="add_column", disabled=True, hidden='hidden'),
+            html.Button('Submit', id='submit_edit', n_clicks=0),
             html.Hr()
         ])
     return res 
@@ -180,7 +181,7 @@ def display_df_shape(df):
     ]
     return res 
 
-def get_data_analysis_output(action, df):
+def get_data_analysis_output(action, df, active_df_name):
     #print(df)
     #print('----------')
     print(action)
