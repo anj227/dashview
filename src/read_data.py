@@ -18,6 +18,9 @@ def display_dash_table(dataframe, max_rows=1000):
     n_rows = dataframe.shape[0]
     n = min(n_rows, max_rows)   # get the number of rows to display..
     df = dataframe.head(n)
+    print('--- Column order in display_dash_table: ')
+    print(df.columns)
+    print('--------')
     return dash_table.DataTable(
             data=df.to_dict('records'),
             columns=[{'name': i, 'id': i, 'deletable': True, 'renamable': False} for i in df.columns],
@@ -99,6 +102,9 @@ def parse_contents(df, filename, date):
     txt = 'File name: ' + filename  
     if date is not None:
         txt += ', Modified at: ' + str(datetime.datetime.fromtimestamp(date))
+    print('DF in parse_contents: ')
+    print(df.columns)
+    print('----------')
     return html.Div([
         html.P(txt, style=styles.INFO_TEXT ),
         display_dash_table(df, max_lines),

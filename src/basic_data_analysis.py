@@ -20,13 +20,13 @@ def get_column_type(dtype_kind):
     else:
         return '?? Unknown datatype'
 
-def get_table_with_clickable_data(df_new):
+def display_table_column_info(df_new):
     dash_table_obj = html.Div(
-        id="div_with_column_info",
+        id="div_with_column_info",  # ID not userd
         children=[
-            html.Div(id='click-data', style={'whiteSpace': 'pre-wrap'}),
+            html.Div(id='additional_column_info_div', style={'whiteSpace': 'pre-wrap'}),
             dash_table.DataTable(
-                id='table',
+                id='table_column_info',
                 data=df_new.to_dict('records'),
                 columns=[{'name': i, 'id': i} for i in df_new.columns]
             ),
@@ -53,8 +53,10 @@ def display_df_edit_options(df):
                 placeholder = "Formula",
                 style={'width': '100%', 'height': "2em"},
             ),
-            dcc.Textarea(id="ops_type", value="add_column", disabled=True, hidden='hidden'),
-            html.Button('Submit', id='submit_edit', n_clicks=0),
+            dcc.Textarea(id={'type': 'edit_info_text', 'index': 'df_edit'}, 
+                value="add_column", disabled=True, hidden='hidden'),
+            html.Button('Submit', id={'type': 'submit_edits', 'index': 'df_edit'}, n_clicks=0),  
+            # like da_button
             html.Hr()
         ])
     return res 
@@ -82,7 +84,7 @@ def display_df_column_info(df):
     my_array = np.array(all_lines)
     df_columns = ['Column Name', 'Null Count',  'Data type']
     df_new = pd.DataFrame(my_array, columns = df_columns)
-    df_content = get_table_with_clickable_data(df_new)
+    df_content = display_table_column_info(df_new)
     return df_content
 
 # From dash website:
@@ -104,6 +106,8 @@ def style_row_by_top_values(df, nlargest=2):
                 'backgroundColor': '#39CCCC',
                 'color': 'white'
             })
+    first_col_style = {'if': {'column_id': 'index'}, 'backgroundColor': '#EAEAEA','fontWeight': 'bold'}
+    styles.append(first_col_style)
     return styles
 
 # {'if': {'filter_query': '{id} = 3', 'column_id': 'sepal_width'}, 
