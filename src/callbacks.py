@@ -2,6 +2,8 @@
 # When a new DF is loaded, update the list of loaded data
 # Return data to the callback (update_output) to update the left-panel display 
 
+# Store data in dict format, as dash doesn't store df directly in store
+# 
 
 import base64
 import datetime
@@ -25,6 +27,7 @@ import plot_data as plot_data
 import basic_data_analysis as bda
 import settings as global_settings
 import df_changes as dfc
+import df_helper as dfh 
 from app import app
 from app import server
 
@@ -33,23 +36,13 @@ from app import server
 LOADED_DF_NAMES = {}  # dict of dict -- keys: df_names, value: {'source_file', 'last_updated'}
 ACTIVE_DF = ''
 LOADED_DFS = dict()
-DEBUG = True 
 
+
+DEBUG = True 
 def debug(*args):
     if DEBUG:
         print(*args)
 
-def df_to_dict(df):
-    debug(df)
-    df_dict = df.to_dict('records')
-    debug(df_dict)
-    return df_dict
-
-def dict_to_df(di):
-    debug(di)
-    df = pd.DataFrame.from_dict(di)
-    debug(df)
-    return df 
 
 
 def get_df_button_comp(button_df_name, source_data=None):
@@ -70,20 +63,22 @@ def get_df_from_current_content(current_df_content, active_df_name, current_df_i
     df_temp = pd.DataFrame()
     if active_df_name is not None:
         if active_df_name != "":
-            debug(current_df_content)
-            df_dict = current_df_content[active_df_name]
-            if current_df_info is not None:
-                column_list = current_df_info[active_df_name]['column_list']
-            debug(df_dict)
 
-            df_temp = dict_to_df(df_dict) # pd.DataFrame.from_dict(df_dict, columns=column_list)
+            df_dict = current_df_content[active_df_name]
+
+            # Convert dict to DF 
+            column_types = None
+            column_list = None 
+            if current_df_info is not None:
+                column_types = current_df_info[active_df_name]['saved_column_types']
+                column_list = current_df_info[active_df_name]['saved_column_list']
+
+            df_temp = dfh.dict_to_df(df_dict, column_types, column_list)
+
+            
             debug(df_temp)
-            debug('----- after reordering -----')
-            # Re-order the columns:
-            df_temp = df_temp[column_list]
-            debug(df_temp)
-            print('------ in get_df_from_current_content')
-            print(df_temp.columns)
+            debug('------ in get_df_from_current_content')
+            debug(df_temp.columns)
     return df_temp
 
 def update_loaded_files_navContent(loaded_dfs_children, new_df_name):
@@ -178,7 +173,7 @@ def update_edit_ops_info(clicks, in_value): # ops_type
         [ 
         Output('loaded_df_info', 'data'),
         Output('loaded_df_content', 'data'),
-        Output(component_id='upload-data', component_property='contents'),
+        # Output(component_id='upload-data', component_property='contents'),
         ],
         Input(component_id='upload-data', component_property='contents'),
         State(component_id='upload-data', component_property='filename'),
@@ -213,24 +208,29 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
             debug('------ First data load: -----')
             debug(df_temp.head())
             debug(df_temp.columns)
+            debug( dict(df_temp.dtypes) )
             debug('--------------')
             if not df_temp.empty:
-                # new_df_content[new_df_name] = df_temp.to_dict('records')
-                new_df_content[new_df_name] = df_to_dict(df_temp)
+                new_df_content[new_df_name] = dfh.df_to_dict(df_temp)
                 new_df_info[new_df_name] = {
                         'source_file': file_name, 
                         'last_updated': file_date,
                         'data_load_counter': n,
                         'active_status': True,
                         'last_df_updated': time_now,
-                        'column_list': df_temp.columns,
+                        'saved_column_list': df_temp.columns,
+                        'saved_column_types': dfh.get_json_from_dtype(df_temp.dtypes)
                     }
-            return new_df_info, new_df_content,  None
+                print('Saved data..')
+                # print(new_df_content)
+                print(new_df_info)
+                print('Going to send the values back.. ')
+            return new_df_info, new_df_content  #,  None
 
     elif "df_delete" in trig_prop_id:
         if active_df_name is not None:
             new_df_info, new_df_content = local_read_data.remove_df(current_df_info, current_df_content, active_df_name)
-            return new_df_info, new_df_content, None
+            return new_df_info, new_df_content #, None
         else:
             raise PreventUpdate
 
@@ -242,19 +242,20 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                 if value['ops'] == 'new_column':
                 
                     df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
-                    # new_df_content[active_df_name] = df_temp.to_dict('records')
-                    new_df_content[active_df_name] = df_to_dict(df_temp)
-                    return new_df_info, new_df_content, None
+                    new_df_content[active_df_name] = dfh.df_temp.to_dict('records')
+                    new_df_info[active_df_name]['saved_column_list'] = df_temp.columns
+                    new_df_info[active_df_name]['saved_column_types'] = dfh.get_json_from_dtype(df_temp.dtypes)
+                    new_df_info[active_df_name]['last_df_updated'] = time_now
+                    return new_df_info, new_df_content # , None
                 elif value['ops'] == 'change_column':
-                    # new_val = {'ops': 'change_column', 'column_name': col_name, 'new_type': col_type}
                     print('Column name: ', value['column_name'], ' new type: ', value['new_type'])
                     print(df_temp.dtypes)
                     df_temp['Date'] = pd.to_datetime(df_temp['Date'], infer_datetime_format=True)
                     print(df_temp.dtypes)
-                    # new_df_content[active_df_name] = df_temp.to_dict('records')
-                    new_df_content[active_df_name] = df_to_dict(df_temp)
+                    new_df_content[active_df_name] = dfh.df_to_dict(df_temp)
+                    new_df_info[active_df_name]['saved_column_types'] = dfh.get_json_from_dtype(df_temp.dtypes)
                     new_df_info[active_df_name]['last_df_updated'] = time_now
-                    return new_df_info, new_df_content, None
+                    return new_df_info, new_df_content #, None
         else:
             raise PreventUpdate
 
@@ -271,6 +272,8 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
         State('active_df_name', 'data'),
     )
 def update_active_df_name(current_df_info, button_clicks, current_active_df_name):
+    print('IN update_active_df_name')
+    print(current_df_info)
     # Assume you need to display last updated value.
     trig = dash.callback_context.triggered[0]
     debug('In update_active_df_name: ', trig)
@@ -330,8 +333,6 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
         df_info = current_df_info[active_df_name]
         file_name = df_info['source_file']
         file_date = df_info['last_updated']
-        print('Column order in update_df_display: ')
-        print(df_temp.columns)
         df_content = [local_read_data.parse_contents(df_temp, file_name, file_date)]
     else:
         print('df_temp is empty..')
@@ -345,6 +346,7 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
         
     )
 def update_displayed_df_list(current_df_info, current_displayed_df): 
+    print('Am I here..?  update_displayed_df_list ')
     # Assume you need to display last updated value.
     df_content = []
 

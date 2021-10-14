@@ -27,7 +27,8 @@ def provide_column_type_change_options(column_name, column_type):
             html.P("Choose the new datatype: "),
             html.P(""),
             opt_comp,
-            dcc.Textarea(id={'type': 'edit_info_text', 'index': 'column_type_change'}, value='', disabled=True, hidden='hidden'),
+            dcc.Textarea(id={'type': 'edit_info_text', 'index': 'column_type_change'}, 
+                value=f'{column_name}, {available_types[0]}', disabled=True, hidden='hidden'),
             html.Button('Submit', id={'type': 'submit_edits', 'index': 'column_change'}, n_clicks=0),  
             html.Hr(),
         ])

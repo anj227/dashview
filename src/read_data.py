@@ -94,7 +94,7 @@ def remove_df(current_df_info, current_df_content, delete_df_name):
             cc_info = current_df_info[cc]
             if cc_info['active_status']:
                 current_df_info[cc]['active_status'] = False
-                current_df_content[cc] = {} 
+                current_df_content[cc] = None  #  TODO: Should completely remove the ref..
     return current_df_info, current_df_content
 
 def parse_contents(df, filename, date):
@@ -104,6 +104,7 @@ def parse_contents(df, filename, date):
         txt += ', Modified at: ' + str(datetime.datetime.fromtimestamp(date))
     print('DF in parse_contents: ')
     print(df.columns)
+    print(df.dtypes)
     print('----------')
     return html.Div([
         html.P(txt, style=styles.INFO_TEXT ),
