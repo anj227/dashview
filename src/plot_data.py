@@ -12,7 +12,6 @@ def get_figure(df, colX=None, colY=None, plot_type='line'):
     if colY is None:
         colY = [df.columns[1]]
 
-    print('------ plot type: ', plot_type)
     if plot_type == 'line':
         fig = px.line(df, x=colX, y=colY)
     elif plot_type == 'scatter':

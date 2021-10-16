@@ -5,7 +5,6 @@ import json
 def get_json_from_dtype(dft):
     # dft = df.dtypes 
     aj = pd.Series.to_json(dft)
-    print(aj)
     return aj
 
 def get_dict_from_saved_json(aj):
@@ -31,9 +30,5 @@ def dict_to_df(di, column_types=None, column_list=None):
     if column_types is not None:
         # First convert string (json) to dict 
         dft_dict = get_dict_from_saved_json(column_types)
-        print(column_types)
-        print(dft_dict)
         df = df.astype(dft_dict)  #.astype({0: float, 1:str})
-    print(df)
-    print('--^^^^^ in dict_to_df ^^^^^^')
     return df 

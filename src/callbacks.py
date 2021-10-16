@@ -2,8 +2,7 @@
 # When a new DF is loaded, update the list of loaded data
 # Return data to the callback (update_output) to update the left-panel display 
 
-# Store data in dict format, as dash doesn't store df directly in store
-# 
+# Remove most of print statements -- getting cluttered.
 
 import base64
 import datetime
@@ -38,7 +37,7 @@ ACTIVE_DF = ''
 LOADED_DFS = dict()
 
 
-DEBUG = True 
+` = True 
 def debug(*args):
     if DEBUG:
         print(*args)
@@ -75,10 +74,6 @@ def get_df_from_current_content(current_df_content, active_df_name, current_df_i
 
             df_temp = dfh.dict_to_df(df_dict, column_types, column_list)
 
-            
-            debug(df_temp)
-            debug('------ in get_df_from_current_content')
-            debug(df_temp.columns)
     return df_temp
 
 def update_loaded_files_navContent(loaded_dfs_children, new_df_name):
@@ -121,37 +116,32 @@ def get_active_df_name_from_button(clicks):
     Input({'type': 'submit_edits', 'index': ALL}, 'n_clicks'),
     State({'type': 'edit_info_text', 'index': ALL}, 'value'),
     # Input(component_id='ops_type', component_property='value'),  # IS this used anymore??
-
+    prevent_initial_call=True
     )
 def update_edit_ops_info(clicks, in_value): # ops_type
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
     trig = dash.callback_context.triggered[0]
     # Trigger only when submit is clicked.. ignore changes to input text..
-    print('IN: update_edit_ops_info')
-    print(trig)
-    print(clicks)
-    print(in_value)
     
     trig_prop_id = trig['prop_id']
-    print('trig_prop_id: ', trig_prop_id)
     if trig_prop_id is None or trig_prop_id == '':
         raise PreventUpdate
 
-    if 'column_change' in trig_prop_id:
-        print("Need to get info about changing column type..")
-        print(in_value[0])
+    if 'column_change' in trig_prop_id and clicks != [0]:
         col_info = in_value[0]
         cc = col_info.split(',')
         col_name = cc[0].strip()
         col_type = cc[1].strip()
-        print(f'Need to change {col_name} to {col_type}')
         new_val = {'ops': 'change_column', 'column_name': col_name, 'new_type': col_type}
-        print(new_val)
+        
         return new_val
     elif 'df_edit' in trig_prop_id:
-        print(in_value)
         # hard-coded right now.
         new_val = {'ops': 'new_column', 'new_name': 'daily_diff', 'operation': 'df_0.high - df_0.low'}
-        print(new_val)
+        
         return new_val
     else:
         raise PreventUpdate
@@ -173,7 +163,7 @@ def update_edit_ops_info(clicks, in_value): # ops_type
         [ 
         Output('loaded_df_info', 'data'),
         Output('loaded_df_content', 'data'),
-        # Output(component_id='upload-data', component_property='contents'),
+        Output(component_id='upload-data', component_property='contents'),
         ],
         Input(component_id='upload-data', component_property='contents'),
         State(component_id='upload-data', component_property='filename'),
@@ -205,11 +195,7 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
         if content is not None:
             # Load data first and then parse it..
             df_temp = local_read_data.load_data(content, file_name, file_date)
-            debug('------ First data load: -----')
-            debug(df_temp.head())
-            debug(df_temp.columns)
-            debug( dict(df_temp.dtypes) )
-            debug('--------------')
+            
             if not df_temp.empty:
                 new_df_content[new_df_name] = dfh.df_to_dict(df_temp)
                 new_df_info[new_df_name] = {
@@ -221,16 +207,12 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                         'saved_column_list': df_temp.columns,
                         'saved_column_types': dfh.get_json_from_dtype(df_temp.dtypes)
                     }
-                print('Saved data..')
-                # print(new_df_content)
-                print(new_df_info)
-                print('Going to send the values back.. ')
-            return new_df_info, new_df_content  #,  None
+            return new_df_info, new_df_content,  None
 
     elif "df_delete" in trig_prop_id:
         if active_df_name is not None:
             new_df_info, new_df_content = local_read_data.remove_df(current_df_info, current_df_content, active_df_name)
-            return new_df_info, new_df_content #, None
+            return new_df_info, new_df_content, None
         else:
             raise PreventUpdate
 
@@ -242,20 +224,17 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
                 if value['ops'] == 'new_column':
                 
                     df_temp = df_temp.assign(open_close = df_temp.Open - df_temp.Close)
-                    new_df_content[active_df_name] = dfh.df_temp.to_dict('records')
+                    new_df_content[active_df_name] = dfh.df_to_dict(df_temp)
                     new_df_info[active_df_name]['saved_column_list'] = df_temp.columns
                     new_df_info[active_df_name]['saved_column_types'] = dfh.get_json_from_dtype(df_temp.dtypes)
                     new_df_info[active_df_name]['last_df_updated'] = time_now
-                    return new_df_info, new_df_content # , None
+                    return new_df_info, new_df_content, None
                 elif value['ops'] == 'change_column':
-                    print('Column name: ', value['column_name'], ' new type: ', value['new_type'])
-                    print(df_temp.dtypes)
                     df_temp['Date'] = pd.to_datetime(df_temp['Date'], infer_datetime_format=True)
-                    print(df_temp.dtypes)
                     new_df_content[active_df_name] = dfh.df_to_dict(df_temp)
                     new_df_info[active_df_name]['saved_column_types'] = dfh.get_json_from_dtype(df_temp.dtypes)
                     new_df_info[active_df_name]['last_df_updated'] = time_now
-                    return new_df_info, new_df_content #, None
+                    return new_df_info, new_df_content, None
         else:
             raise PreventUpdate
 
@@ -272,11 +251,8 @@ def upload_new_data(content, file_name, file_date, current_df_info, current_df_c
         State('active_df_name', 'data'),
     )
 def update_active_df_name(current_df_info, button_clicks, current_active_df_name):
-    print('IN update_active_df_name')
-    print(current_df_info)
     # Assume you need to display last updated value.
     trig = dash.callback_context.triggered[0]
-    debug('In update_active_df_name: ', trig)
     latest_df_name = None 
     trig_prop_id = trig['prop_id']
     if 'loaded_df_info.data' in trig_prop_id:
@@ -307,7 +283,6 @@ def update_active_df_name(current_df_info, button_clicks, current_active_df_name
     else:
         if current_active_df_name is not None:
             latest_df_name = current_active_df_name
-    print(latest_df_name)
     return latest_df_name
     
 
@@ -320,9 +295,6 @@ def update_active_df_name(current_df_info, button_clicks, current_active_df_name
     )
 def update_df_display(active_df_name, current_df_info, current_df_content):
     # Assume you need to display last updated value.
-    print('In update_df_display ', active_df_name)
-    print(current_df_info)
-    print('--------')
     
     df_content = html.Div()
     #if active_df_name is not None: 
@@ -346,7 +318,6 @@ def update_df_display(active_df_name, current_df_info, current_df_content):
         
     )
 def update_displayed_df_list(current_df_info, current_displayed_df): 
-    print('Am I here..?  update_displayed_df_list ')
     # Assume you need to display last updated value.
     df_content = []
 
@@ -381,8 +352,6 @@ def update_data_analysis_results(button_clicks, da_options, current_df_content, 
     trig = dash.callback_context.triggered[0]
     action = ""
     trig_prop_id = trig['prop_id']
-    print(trig_prop_id)
-    print('--------')
     mapped_buttons = global_settings.MAPPED_BUTTONS
     for btn in mapped_buttons:
         if btn in trig_prop_id:
@@ -426,14 +395,8 @@ def update_plot(dropdown_value, current_df_content, active_df_name, current_df_i
         plot_type = dropdown_value[0]
         colX = dropdown_value[1]
         colY = dropdown_value[2]
-        print(dropdown_value)
         if not df_temp.empty:
-            #interactive_plot = plot_data.create_interactive_plot(df_temp)
-            print(df_temp.shape)
-            print(colX)
-            print(colY)
-            print(plot_type)
-            print('-------')
+            
             fig = plot_data.get_figure(df_temp, colX, colY, plot_type)
         return fig
     else:    
@@ -461,9 +424,7 @@ def display_click_data(active_cell, table_data, current_df_content, current_df_i
         column_name = table_data[row]['Column Name']
         column_type = table_data[row]['Data type']
 
-        print(active_cell)
         if active_cell['column'] == 2:
-            print('Give options to change the data type:')
             txt1 = 'Current data type: ' + column_type
             # Add options.
             comp = dfc.provide_column_type_change_options(column_name, column_type)

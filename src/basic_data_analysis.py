@@ -12,7 +12,6 @@ import plot_data as plot_data
 import settings as global_settings
 
 def get_column_type(dtype_kind):
-    # print(dtype_kind)
     # Mapping ref: https://numpy.org/doc/stable/reference/generated/numpy.dtype.kind.html#numpy.dtype.kind
     dtype_kind_mapping = global_settings.DTYPE_MAPPING
     if dtype_kind in list(dtype_kind_mapping.keys()):
@@ -91,13 +90,11 @@ def display_df_column_info(df):
 def style_row_by_top_values(df, nlargest=2):
     numeric_columns = df.columns
     numeric_columns = numeric_columns.drop(['id', 'index'])
-    print(numeric_columns)
 
     styles = []
     for i in range(len(df)):
         row = df.loc[i, numeric_columns].sort_values(ascending=False)
         for j in range(nlargest):
-            print( '----- CHECK: ', row.keys()[j] )
             styles.append({
                 'if': {
                     'filter_query': '{{id}} = {}'.format(i),
@@ -120,7 +117,6 @@ def style_row_by_value(df, columns_to_exclude=[], value_formatting={}):
     styles = []
     for i in range(len(df)):     # Going row by row..
         row = df.loc[i, numeric_columns]
-        # print(row.keys(), '  <---- row keys.')
         for ks in row.keys():
             row
             styles.append(
@@ -130,10 +126,8 @@ def style_row_by_value(df, columns_to_exclude=[], value_formatting={}):
                 } 
                 for x in df[df['petal_length']>0.5].id 
             )
-        print(styles)
     first_col_style = {'if': {'column_id': 'index'}, 'backgroundColor': '#EAEAEA','fontWeight': 'bold'}
     styles.append(first_col_style)
-    print(styles)
     return styles
 
 
@@ -146,8 +140,6 @@ def display_df_correlation(df):
     corr_df = corr_df.reset_index()
     
     corr_df['id'] = corr_df.index
-    print(corr_df)
-    
     
     columns_to_exclude = ['id', 'index']
     value_formatting = {
@@ -172,7 +164,6 @@ def display_df_correlation(df):
             #style_data_conditional=style_row_by_value(corr_df, columns_to_exclude, value_formatting),
             style_data_conditional = style_row_by_top_values(corr_df)
         )
-    print(res)
     return res 
 
 def display_df_shape(df):
@@ -186,9 +177,6 @@ def display_df_shape(df):
     return res 
 
 def get_data_analysis_output(action, df, active_df_name):
-    #print(df)
-    #print('----------')
-    print(action)
     if action == 'Shape':
         res = display_df_shape(df)
     elif action == 'da_columns':
