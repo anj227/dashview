@@ -2,6 +2,7 @@ import io
 import dash
 from dash import dash_table, html, dcc
 from dash.dependencies import Input, Output, State, MATCH, ALL
+import plotly.express as px
 
 import numpy as np 
 import pandas as pd
@@ -176,6 +177,20 @@ def display_df_shape(df):
     ]
     return res 
 
+def display_df_scatter_matrix(df):
+    df_num = df.select_dtypes(include=[np.number]) 
+    cols = list(df_num.columns)
+    colX = cols[0]
+    colY = cols[1:]
+    fig = px.scatter_matrix(df_num,
+        dimensions=colY,
+        color=colX,
+        )
+    output = html.Div([
+        dcc.Graph(id='graph_id', figure=fig),
+    ])
+    return output 
+
 def get_data_analysis_output(action, df, active_df_name):
     if action == 'Shape':
         res = display_df_shape(df)
@@ -189,6 +204,8 @@ def get_data_analysis_output(action, df, active_df_name):
         res = display_df_edit_options(df)
     elif action == 'Correlation':
         res = display_df_correlation(df)
+    elif action == 'Scatter Matrix':
+        res = display_df_scatter_matrix(df)
     else:
         res = html.P("Need to perform action: " + action)
 

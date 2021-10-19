@@ -359,7 +359,7 @@ def update_data_analysis_results(button_clicks, da_options, current_df_content, 
     
     if "da_radio_item" in trig_prop_id:
         val = trig['value']
-        valid_values = ['Shape', 'Correlation', 'Describe']
+        valid_values = global_settings.DA_OPTIONS
         if val in valid_values: 
             action = val 
     res = html.P("")

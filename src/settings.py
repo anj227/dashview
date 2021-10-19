@@ -1,5 +1,5 @@
 # Centralized place to put all the setting / global variables.
-DA_OPTIONS = ['Choose Options', 'Shape', 'Correlation', 'Describe']
+DA_OPTIONS = ['Choose Options', 'Shape', 'Correlation', 'Describe', 'Scatter Matrix']
 MAPPED_BUTTONS = ['da_describe', 'da_columns', 'da_Plot', 'da_edits', 'da_options']
 DTYPE_MAPPING = {
         'b': 'Boolean',

@@ -4,7 +4,7 @@ from dash import dash_table, html, dcc
 import plotly.express as px
 import styles
 
-VALID_PLOT_TYPES = ['line', 'scatter', 'bar', 'scatter_matrix']
+VALID_PLOT_TYPES = ['line', 'scatter', 'bar']  # Removed scatter_matrix
 def get_figure(df, colX=None, colY=None, plot_type='line'):
     cols = list(df.columns)
     if colX is None:
@@ -18,12 +18,12 @@ def get_figure(df, colX=None, colY=None, plot_type='line'):
         fig = px.scatter(df, x=colX, y=colY)
     elif plot_type == 'bar':
         fig = px.bar(df, x=colX, y=colY, barmode='group')
-    elif plot_type == 'scatter_matrix':
-        # px.bar(data_canada, x='year', y='pop')
-        fig = px.scatter_matrix(df,
-            dimensions=colY, 
-            color=colX,
-            )
+    # elif plot_type == 'scatter_matrix':
+    #     # px.bar(data_canada, x='year', y='pop')
+    #     fig = px.scatter_matrix(df,
+    #         dimensions=colY, 
+    #         color=colX,
+    #         )
     return fig 
 
 def create_interactive_plot(df, colX=None, colY=None):
