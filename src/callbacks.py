@@ -37,7 +37,7 @@ ACTIVE_DF = ''
 LOADED_DFS = dict()
 
 
-` = True 
+DEBUG = True 
 def debug(*args):
     if DEBUG:
         print(*args)
@@ -431,11 +431,9 @@ def display_click_data(active_cell, table_data, current_df_content, current_df_i
             return comp 
         else:
             
-
             df_temp = get_df_from_current_content(current_df_content, active_df_name, current_df_info)
             if not df_temp.empty:
-                dd = df_temp[column_name].describe().to_dict('records')
-                # dd = df_to_dict(df_temp)
+                dd = df_temp[column_name].describe().to_dict()
                 out = '%s\n------\n' % (value)
 
                 for key in dd.keys():
