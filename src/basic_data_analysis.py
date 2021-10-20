@@ -178,16 +178,38 @@ def display_df_shape(df):
     return res 
 
 def display_df_scatter_matrix(df):
-    df_num = df.select_dtypes(include=[np.number]) 
+    # Numerical columns
+    df_num = df.select_dtypes(include=[np.number], exclude=[np.datetime64, 'datetime']) 
     cols = list(df_num.columns)
-    colX = cols[0]
-    colY = cols[1:]
-    fig = px.scatter_matrix(df_num,
+
+    # Non numerical columns:
+    df_non_num = df.select_dtypes(exclude=[np.number, np.datetime64, 'datetime'])    
+    cols_non_num = list(df_non_num.columns)
+
+    all_cols = list(df.select_dtypes(exclude=[np.datetime64, 'datetime']).columns)
+    if len(cols_non_num) > 0:
+        colX = cols_non_num[0]
+        colY = cols 
+    else:
+        colX = cols[0]
+        colY = cols[1:]
+
+    print(cols, cols_non_num, all_cols)
+    fig = px.scatter_matrix(df,
         dimensions=colY,
         color=colX,
         )
     output = html.Div([
-        dcc.Graph(id='graph_id', figure=fig),
+        html.Label('Labels'),
+        dcc.Dropdown(
+            id={'type': 'da_plot_input2', 'index': 'x-axis-dropdown'}, 
+            options=[ {'label': col, 'value': col} for col in all_cols ],
+            value=colX,
+            multi=False,
+            placeholder="X-axis",
+            style=styles.xy_dropdown
+        ),
+        dcc.Graph(id='graph_id2', figure=fig),
     ])
     return output 
 
